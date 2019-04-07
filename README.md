@@ -47,8 +47,7 @@ func (s *SequenceSearch) Sequence(nucleotide Nucleotide) []string
 
 #### func StringIndexFrom
 
-StringIndexFrom searches the target in the source from a given index.  This function is needed because the builtin strings.Index  
-only searches from index 0, while it could be multiple target found in the source
+StringIndexFrom searches the target in the source from a given index.  This function is needed because the builtin strings.Index only searches from index 0, while it's necessary to continuously find other targets in the source.
 
 ``` go
 func StringIndexFrom(startIndex int, source string, target string) int
@@ -56,8 +55,7 @@ func StringIndexFrom(startIndex int, source string, target string) int
 
 ### grpc
 
-This package is the implementation of streaming of nucleotide in gRPC.  It contains the client, sequencer, and server sub packages.  
-The client sends the stream in protobuf format with the implementation of client interface generated for gRPC.  The sequencer contains a generated code of protobuf structure along with the interfaces for client and server.  The server receives the stream by implementing a server interface generated for gRPC and it utilizes the sequencesearch package to generate sequences.
+This package is the implementation of streaming of nucleotide in gRPC.  It contains the client, sequencer, and server sub packages.  The client sends the stream in protobuf format with the implementation of client interface generated for gRPC.  The sequencer contains a generated code of protobuf structure along with the interfaces for client and server.  The server receives the stream by implementing a server interface generated for gRPC and it utilizes the sequencesearch package to generate sequences.
 
 #### client
 
