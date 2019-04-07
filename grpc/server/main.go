@@ -31,7 +31,7 @@ const port = ":8080"
 
 // Server .
 type Server struct {
-	Sequencer *sequencesearch.SequenceSearch
+	Sequencer sequencesearch.SequenceSearcher
 }
 
 // NewServer creates type of server
@@ -62,7 +62,7 @@ func (s *Server) Next(stream pb.Sequencer_NextServer) error {
 		nc := ss.Nucleotide{
 			Input: st.Input,
 		}
-		output := s.Sequencer.Sequence(nc)
+		output := s.Sequencer.NextSequence(nc)
 		s.print(output)
 
 	}

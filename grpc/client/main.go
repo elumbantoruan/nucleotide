@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"flag"
 	"log"
 	pb "nucleotide/grpc/sequencer"
+	"os"
 
 	"google.golang.org/grpc"
 )
@@ -13,13 +16,50 @@ const (
 )
 
 func main() {
-	c := NewClient()
-	c.Send("AAGTACGTGCAGTGAGTAGTAGACCTGACGTAGACCGATATAAGTAGCTAε")
-	// c.Send("AGTAGGG")
-	// c.Send("AGTAGGG")
-	// c.Send("AGTAGGG")
-	// c.Send("AGTAGGG")
 
+	path := flag.String("path", "", "path for input file")
+	flag.Parse()
+
+	var (
+		input []string
+		err   error
+	)
+
+	c := NewClient()
+	if *path != "" {
+		input, err = readLines(*path)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		if len(os.Args) == 2 {
+			input = []string{os.Args[1]}
+		} else {
+			log.Fatal("enter argument")
+		}
+	}
+	for _, l := range input {
+		c.Send(l)
+	}
+
+}
+
+func readLines(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return lines, nil
 }
 
 // Client .
@@ -46,7 +86,7 @@ func (c *Client) Send(message string) {
 	stream, err := client.Next(ctx)
 	if err != nil {
 		log.Println(err)
-		log.Println("Please make sure if the server is up and running")
+		log.Println("Make sure if the server is up and running")
 		return
 	}
 

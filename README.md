@@ -6,6 +6,10 @@ The intent of this project is to build a subsequences of [nucleotide](https://en
 The input comes as a stream, which takes on one of the values: A, C, G, T, or special value ε to indicate as end of stream.  
 The output is a list of sequences that are made by prefix, target, and suffix.  
 
+## Dependency
+
+This project requires go version >= 1.11 as it utilizes Go Modules for the dependency management.
+
 ## Project structure
 
 ### sequencesearch
@@ -21,6 +25,10 @@ At the end, the buffer will be populated with some left over input data that has
 it can be used for the next incoming stream
 
 ``` go
+type SequenceSearcher interface {
+    NextSequence() []string
+}
+
 type SequenceSearch struct {
     Target        string
     PrefixLen     int
@@ -37,12 +45,12 @@ New creates an instance of SequenceSearch
 func New(target string, prefixLen int, suffixLen int) *SequenceSearch
 ```
 
-#### func (*SequenceSearch) Sequence
+#### func (*SequenceSearch) NextSequence
 
 Sequence builds a sequence of nucleotide
 
 ``` go
-func (s *SequenceSearch) Sequence(nucleotide Nucleotide) []string
+func (s *SequenceSearch) NextSequence(nucleotide Nucleotide) []string
 ```
 
 #### func StringIndexFrom
@@ -59,12 +67,26 @@ This package is the implementation of streaming of nucleotide in gRPC.  It conta
 
 #### client
 
-From gRPC/client folder, build the client `go build` or simply run `go run main.go`  
+The input data can be set from a command line argument or simply put a path for an input file.  
+From gRPC/client folder, build the client `go build` or simply run `go run main.go`
+
+``` go
+   ./client AGTAAGTA
+```
+
+or
+
+``` go
+   ./client -path=input.txt
+```
+
 Make sure the Server is running before executing the client.
 
-### server
+#### server
 
 From gRPC/server folder, build the server `go build` or simply run `go run main.go`
+For simplicity, the server just prints the sequences into a console.  It doesn't send the stream back to the client.
+The reason is because the EOF of stream is controlled by a special character located in the stream itself.
 
 ### main
 

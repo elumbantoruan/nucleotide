@@ -10,8 +10,13 @@ type Nucleotide struct {
 	Input string
 }
 
-// SequenceSearch search a sequence in the incoming nucleotide by finding the target, and add prefix and suffix (if applicable)
-// from a given  prefix length and suffix length respectively.
+// SequenceSearcher is an interface to search a next sequence
+type SequenceSearcher interface {
+	NextSequence(Nucleotide) []string
+}
+
+// SequenceSearch is a concrete implementation of SequenceSearcher which searchs a sequence in the incoming nucleotide by finding the target,
+// and add prefix and suffix (if applicable) from a given  prefix length and suffix length respectively.
 // StringBuilder is used as a buffer for an incoming input, so it can maintain the continuous stream as it's building a sequence.
 // Note there are some optimization with the buffer to minimize its footprint.
 // The buffer will be truncated once it reaches the end of stream and after it's being read into a string.
@@ -24,8 +29,8 @@ type SequenceSearch struct {
 	StringBuilder strings.Builder
 }
 
-// New creates an instance of SequenceSearch
-func New(target string, prefixLen int, suffixLen int) *SequenceSearch {
+// New creates an instance of SequenceSearcher
+func New(target string, prefixLen int, suffixLen int) SequenceSearcher {
 	var sb strings.Builder
 	return &SequenceSearch{
 		StringBuilder: sb,
@@ -35,8 +40,8 @@ func New(target string, prefixLen int, suffixLen int) *SequenceSearch {
 	}
 }
 
-// Sequence builds the sequence
-func (s *SequenceSearch) Sequence(nucleotide Nucleotide) []string {
+// NextSequence builds the sequence
+func (s *SequenceSearch) NextSequence(nucleotide Nucleotide) []string {
 	var (
 		input      string
 		results    []string
