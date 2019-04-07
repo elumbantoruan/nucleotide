@@ -44,6 +44,11 @@ func (c *Client) Send(message string) {
 
 	ctx := context.Background()
 	stream, err := client.Next(ctx)
+	if err != nil {
+		log.Println(err)
+		log.Println("Please make sure if the server is up and running")
+		return
+	}
 
 	nc := pb.Nucleotide{Input: message}
 	err = stream.Send(&nc)

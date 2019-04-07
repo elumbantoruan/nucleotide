@@ -5,12 +5,18 @@ import (
 	"strings"
 )
 
-// Nucleotide .
+// Nucleotide contains the input value
 type Nucleotide struct {
 	Input string
 }
 
-//SequenceSearch .
+// SequenceSearch search a sequence in the incoming nucleotide by finding the target, and add prefix and suffix (if applicable)
+// from a given  prefix length and suffix length respectively.
+// StringBuilder is used as a buffer for an incoming input, so it can maintain the continuous stream as it's building a sequence.
+// Note there are some optimization with the buffer to minimize its footprint.
+// The buffer will be truncated once it reaches the end of stream and after it's being read into a string.
+// At the end, the buffer will be populated with some left over input data that has been used as a target, but potentially
+// it can be used for the next incoming stream
 type SequenceSearch struct {
 	Target        string
 	PrefixLen     int
@@ -18,7 +24,7 @@ type SequenceSearch struct {
 	StringBuilder strings.Builder
 }
 
-// New .
+// New creates an instance of SequenceSearch
 func New(target string, prefixLen int, suffixLen int) *SequenceSearch {
 	var sb strings.Builder
 	return &SequenceSearch{
@@ -29,7 +35,7 @@ func New(target string, prefixLen int, suffixLen int) *SequenceSearch {
 	}
 }
 
-// Sequence .
+// Sequence builds the sequence
 func (s *SequenceSearch) Sequence(nucleotide Nucleotide) []string {
 	var (
 		input      string
@@ -107,7 +113,7 @@ func (s *SequenceSearch) Sequence(nucleotide Nucleotide) []string {
 
 }
 
-// StringIndexFrom finds the index of substring from the startIndex instead of starts from 0.
+// StringIndexFrom finds the index of substring from the startIndex instead of starts from 0 (the builtin strings.Index)
 func StringIndexFrom(startIndex int, source string, target string) int {
 	sub := source[startIndex:]
 	n := strings.Index(sub, target)
