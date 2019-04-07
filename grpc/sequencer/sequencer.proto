@@ -1,0 +1,14 @@
+syntax = "proto3";
+package sequencer;
+
+service Sequencer {
+    rpc Next(stream Nucleotide) returns(Sequence){};
+}
+
+message Nucleotide{
+    string input = 1;
+}
+
+message Sequence {
+    repeated string output = 1;
+}
