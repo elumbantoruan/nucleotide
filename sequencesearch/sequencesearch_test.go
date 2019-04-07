@@ -54,3 +54,40 @@ func TestSequence(t *testing.T) {
 		})
 	}
 }
+
+func TestStringIndexFrom(t *testing.T) {
+	type args struct {
+		startIndex int
+		source     string
+		target     string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "test find AGTA from start index 0, where it should find the target at index 0",
+			args: args{
+				startIndex: 0,
+				source:     "AGTAAGTA",
+				target:     "AGTA"},
+			want: 0,
+		},
+		{
+			name: "test find AGTA from start index 1, where it should find the target at index 4",
+			args: args{
+				startIndex: 1,
+				source:     "AGTAAGTA",
+				target:     "AGTA"},
+			want: 4,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StringIndexFrom(tt.args.startIndex, tt.args.source, tt.args.target); got != tt.want {
+				t.Errorf("StringIndexFrom() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
