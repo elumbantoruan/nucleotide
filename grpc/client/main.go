@@ -17,7 +17,7 @@ const (
 
 func main() {
 
-	path := flag.String("path", "", "path for input file")
+	path := flag.String("path", "input.txt", "path for input file")
 	flag.Parse()
 
 	var (
@@ -38,8 +38,11 @@ func main() {
 			log.Fatal("enter argument")
 		}
 	}
-	for _, l := range input {
-		c.Send(l)
+	for _, line := range input {
+		runes := []rune(line)
+		for i := 0; i < len(runes); i++ {
+			c.Send(runes[i])
+		}
 	}
 
 }
@@ -72,7 +75,7 @@ func NewClient() *Client {
 }
 
 // Send .
-func (c *Client) Send(message string) {
+func (c *Client) Send(char int32) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Println(err)
@@ -90,7 +93,7 @@ func (c *Client) Send(message string) {
 		return
 	}
 
-	nc := pb.Nucleotide{Input: message}
+	nc := pb.Nucleotide{Input: char}
 	err = stream.Send(&nc)
 	if err != nil {
 		log.Println(err)

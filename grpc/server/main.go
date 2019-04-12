@@ -59,12 +59,20 @@ func (s *Server) Next(stream pb.Sequencer_NextServer) error {
 			log.Println("ERROR:")
 			log.Println(err)
 		}
-		nc := ss.Nucleotide{
-			Input: st.Input,
-		}
-		output := s.Sequencer.NextSequence(nc)
-		s.print(output)
 
+		var result []string
+		// runes := []rune(st.Input)
+		// for i := 0; i < len(runes); i++ {
+		// 	output := s.Sequencer.NextSequence(runes[i])
+		// 	if len(output) > 0 {
+		// 		result = append(result, output)
+		// 	}
+		// }
+		output := s.Sequencer.NextSequence(rune(st.Input))
+		if len(output) > 0 {
+			result = append(result, output)
+		}
+		s.print(result)
 	}
 }
 

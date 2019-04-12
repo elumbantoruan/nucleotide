@@ -6,19 +6,19 @@ import (
 )
 
 func main() {
-	source := []string{
-		"A",
-		"AAGTACGTGCAGTGAGTAGTAGACCTGACGTAGACCGATATAAGTAGCTAGGGA",
-		"GTA",
-	}
+
 	target := "AGTA"
 	x := 5
 	y := 7
-	var sequences []string
-	var nc = ss.New(target, x, y)
-	for i := 0; i < len(source); i++ {
-		res := nc.NextSequence(ss.Nucleotide{Input: source[i]})
-		sequences = append(sequences, res...)
+
+	s := "GGGGGGGGGGGGGGGGGGGAAGTACGTGCAGTGAGTAGTAGACCTGACGTAGACCGATATAAGTAGCTAε"
+
+	runes := []rune(s)
+	nc := ss.New(target, x, y)
+	for i := 0; i < len(runes); i++ {
+		res := nc.NextSequence(runes[i])
+		if len(res) > 0 {
+			log.Println(string(res))
+		}
 	}
-	log.Println(sequences)
 }

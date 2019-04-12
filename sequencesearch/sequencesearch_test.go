@@ -7,7 +7,7 @@ import (
 
 func TestSequence(t *testing.T) {
 	type args struct {
-		nucleotide Nucleotide
+		runes []rune
 	}
 	target := "AGTA"
 	prefixLen := 5
@@ -20,24 +20,36 @@ func TestSequence(t *testing.T) {
 		{
 			name: "test where no sequence is found",
 			args: args{
-				nucleotide: Nucleotide{Input: "AAAAAAAA"},
+				runes: []rune("AAAAAAAA"),
 			},
 			want: nil,
 		},
 		{
 			name: "test where target is found along with prefix and suffix generated in one line",
 			args: args{
-				nucleotide: Nucleotide{Input: "TAGTAGGGε"},
+				runes: []rune("TAGTAGGGε"),
 			},
 			want: []string{"T AGTA GGG"},
 		},
 		{
 			name: "test where target are found along with prefix and suffix generated in multiple lines",
 			args: args{
-				nucleotide: Nucleotide{Input: "AAGTACGTGCAGTGAGTAGTAGACCTGACGTAGACCGATATAAGTAGCTAε"},
+				runes: []rune("AAGTACGTGCAGTGAGTAGTAGACCTGACGTAGACCGATATAAGTAGCTAε"),
 			},
 			want: []string{
 				"A AGTA CGTGCAG",
+				"CAGTG AGTA GTAGACC",
+				"TGAGT AGTA GACCTGA",
+				"ATATA AGTA GCTA",
+			},
+		},
+		{
+			name: "test where prefix is so long before target is found along with prefix and suffix generated in multiple lines",
+			args: args{
+				runes: []rune(`GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGAAGTACGTGCAGTGAGTAGTAGACCTGACGTAGACCGATATAAGTAGCTAε`),
+			},
+			want: []string{
+				"GGGGA AGTA CGTGCAG",
 				"CAGTG AGTA GTAGACC",
 				"TGAGT AGTA GACCTGA",
 				"ATATA AGTA GCTA",
@@ -48,8 +60,17 @@ func TestSequence(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// each test data runs in a new instance
 			n := New(target, prefixLen, suffixLen)
-			if got := n.NextSequence(tt.args.nucleotide); !reflect.DeepEqual(got, tt.want) {
+
+			var got []string
+			for i := 0; i < len(tt.args.runes); i++ {
+				output := n.NextSequence(tt.args.runes[i])
+				if len(output) > 0 {
+					got = append(got, output)
+				}
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Sequence() = %v, want %v", got, tt.want)
+
 			}
 		})
 	}

@@ -6,7 +6,7 @@ service Sequencer {
 }
 
 message Nucleotide{
-    string input = 1;
+    int32 input = 1;
 }
 
 message Sequence {

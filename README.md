@@ -26,14 +26,21 @@ it can be used for the next incoming stream
 
 ``` go
 type SequenceSearcher interface {
-    NextSequence() []string
+    NextSequence(rune) string
 }
 
 type SequenceSearch struct {
-    Target        string
-    PrefixLen     int
-    SuffixLen     int
-    StringBuilder strings.Builder
+    Target          string
+    Prefix          string
+    Suffix          string
+    PrefixTargetLen int
+    SuffixTargetLen int
+    StringBuilder   strings.Builder
+    FoundTarget     bool
+    PrefixTargeted  bool
+    SuffixTargeted  bool
+    EOF             bool
+    TargetIndex     int
 }
 ```
 
@@ -50,7 +57,7 @@ func New(target string, prefixLen int, suffixLen int) *SequenceSearch
 Sequence builds a sequence of nucleotide
 
 ``` go
-func (s *SequenceSearch) NextSequence(nucleotide Nucleotide) []string
+func (s *SequenceSearch) NextSequence(input rune) string
 ```
 
 #### func StringIndexFrom

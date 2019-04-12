@@ -5,14 +5,9 @@ import (
 	"strings"
 )
 
-// Nucleotide contains the input value
-type Nucleotide struct {
-	Input string
-}
-
 // SequenceSearcher is an interface to search a next sequence
 type SequenceSearcher interface {
-	NextSequence(Nucleotide) []string
+	NextSequence(rune) string
 }
 
 // SequenceSearch is a concrete implementation of SequenceSearcher which searchs a sequence in the incoming nucleotide by finding the target,
@@ -23,99 +18,147 @@ type SequenceSearcher interface {
 // At the end, the buffer will be populated with some left over input data that has been used as a target, but potentially
 // it can be used for the next incoming stream
 type SequenceSearch struct {
-	Target        string
-	PrefixLen     int
-	SuffixLen     int
-	StringBuilder strings.Builder
+	Target          string
+	Prefix          string
+	Suffix          string
+	PrefixTargetLen int
+	SuffixTargetLen int
+	StringBuilder   strings.Builder
+	FoundTarget     bool
+	PrefixTargeted  bool
+	SuffixTargeted  bool
+	EOF             bool
+	TargetIndex     int
 }
 
 // New creates an instance of SequenceSearcher
-func New(target string, prefixLen int, suffixLen int) SequenceSearcher {
+func New(target string, prefixTargetLen int, suffixTargetLen int) SequenceSearcher {
 	var sb strings.Builder
 	return &SequenceSearch{
-		StringBuilder: sb,
-		Target:        target,
-		PrefixLen:     prefixLen,
-		SuffixLen:     suffixLen,
+		StringBuilder:   sb,
+		Target:          target,
+		PrefixTargetLen: prefixTargetLen,
+		SuffixTargetLen: suffixTargetLen,
 	}
 }
 
 // NextSequence builds the sequence
-func (s *SequenceSearch) NextSequence(nucleotide Nucleotide) []string {
+func (s *SequenceSearch) NextSequence(input rune) string {
 	var (
-		input      string
-		results    []string
-		prefix     string
-		suffix     string
-		output     string
-		left       int
-		right      int
-		eofSymbol  = "ε"
-		startIndex int
-		eof        bool
+		eofSymbol = 'ε'
+
+		bufferLength int
+		buffer       string
+		output       string
 	)
 
-	input = nucleotide.Input
-
-	// doesn't contain target but we need to add it into string builder
-	if !strings.Contains(input, s.Target) {
-		s.StringBuilder.WriteString(input)
-		// after it's added then need to check if it contains the target
-		if !strings.Contains(s.StringBuilder.String(), s.Target) {
-			if strings.HasSuffix(input, eofSymbol) {
-				// so far target never seen and it reached eof stream so clear out the builder because it's no longer needed
-				s.StringBuilder.Reset()
-			}
-			return nil
-		}
+	if input == eofSymbol {
+		s.EOF = true
 	} else {
-		s.StringBuilder.WriteString(input)
+		s.StringBuilder.WriteRune(input)
+	}
+	bufferLength = s.StringBuilder.Len()
+	buffer = s.StringBuilder.String()
+
+	if !s.FoundTarget {
+		s.FoundTarget = s.isTargetFound(buffer)
 	}
 
-	// it must contain the target
-	input = s.StringBuilder.String()
-
-	// clear out string builder for efficient storage
-	s.StringBuilder.Reset()
-
-	for {
-		idx := StringIndexFrom(startIndex, input, s.Target)
-
-		if idx == -1 {
-			break
-		}
-
-		left = idx - s.PrefixLen
-		if idx < s.PrefixLen {
-			left = 0
-		}
-
-		right = idx + len(s.Target) + s.SuffixLen
-		if len(input) <= right {
-			right = len(input)
-		}
-
-		prefix = input[left:idx]
-		eof = strings.HasSuffix(input, eofSymbol)
-		if right == len(input) && eof {
-			right -= len(eofSymbol)
-		}
-		suffix = input[idx+len(s.Target) : right]
-		output = fmt.Sprintf("%s %s %s", prefix, s.Target, suffix)
-		results = append(results, output)
-
-		startIndex = idx + len(s.Target) - 1
+	// remove buffer 1 character from the front since it hasn't found the target but bufferLength has exceeded prefix targeted length + len(target)
+	if !s.PrefixTargeted && !s.FoundTarget && bufferLength > s.PrefixTargetLen+len(s.Target) {
+		buffer = buffer[1:bufferLength]
+		s.StringBuilder.Reset()
+		s.StringBuilder.WriteString(buffer)
+		return ""
 	}
 
-	if !eof && right < len(input) {
-		// optimization
-		// put left over bytes into string builder as it may be able to use it to get next target
-		// startIndex is the last index + length of target - 1
-		s.StringBuilder.WriteString(input[startIndex:])
+	// target is found, next is to assign the prefix
+	if s.FoundTarget && !s.PrefixTargeted {
+		s.TargetIndex = strings.Index(buffer, s.Target)
+		s.Prefix = buffer[:s.TargetIndex]
+		if len(s.Prefix) > s.PrefixTargetLen {
+			begin := len(s.Prefix) - s.PrefixTargetLen
+			s.Prefix = s.Prefix[begin:s.TargetIndex]
+			buffer = buffer[begin:]
+			s.StringBuilder.Reset()
+			s.StringBuilder.WriteString(buffer)
+		}
+
+		// prefix targeted can be empty string, less than or match the prefix targeted length
+		s.PrefixTargeted = true
+
+		// target is found and prefix has been allocated, next is to assign the suffix
+	} else if s.FoundTarget && s.PrefixTargeted {
+		maxLength := len(s.Prefix) + len(s.Target) + s.SuffixTargetLen
+
+		if (bufferLength == maxLength) || s.EOF {
+			if s.EOF {
+				s.Suffix = buffer[len(s.Prefix)+len(s.Target) : bufferLength]
+			} else {
+				s.Suffix = buffer[len(s.Prefix)+len(s.Target) : maxLength]
+			}
+			s.SuffixTargeted = true
+			output = fmt.Sprintf("%s %s %s", s.Prefix, s.Target, s.Suffix)
+
+			// truncate since it's the end of stream
+			if s.EOF {
+				s.reset()
+				s.StringBuilder.Reset()
+			} else {
+				// need to find other target in the buffer (prefix + target + suffix)
+				// for overlapping targets
+				idx := StringIndexFrom(s.TargetIndex+1, buffer, s.Target)
+				if idx >= 0 {
+					left := idx - s.PrefixTargetLen
+					if left < 0 {
+						left = 0
+					}
+					buffer = buffer[left:]
+					s.StringBuilder.Reset()
+					s.StringBuilder.WriteString(buffer)
+
+					// find the next prefix and target
+					s.PrefixTargeted = true
+					s.FoundTarget = true
+					if idx > s.PrefixTargetLen {
+						s.Prefix = buffer[:s.PrefixTargetLen]
+					} else {
+						s.Prefix = buffer[:idx]
+					}
+					s.Suffix = ""
+
+				} else {
+
+					if len(buffer) > s.PrefixTargetLen {
+						buffer = buffer[len(buffer)-s.PrefixTargetLen:]
+					}
+
+					s.StringBuilder.Reset()
+					s.StringBuilder.WriteString(buffer)
+
+					s.PrefixTargeted = false
+					s.FoundTarget = false
+				}
+			}
+
+		}
+
 	}
 
-	return results
+	return output
+}
 
+func (s *SequenceSearch) isTargetFound(input string) bool {
+	return strings.Contains(input, s.Target)
+}
+
+func (s *SequenceSearch) reset() {
+	s.Prefix = ""
+	s.Suffix = ""
+	s.FoundTarget = false
+	s.PrefixTargeted = false
+	s.SuffixTargeted = false
+	s.EOF = false
 }
 
 // StringIndexFrom finds the index of substring from the startIndex instead of starts from 0 (the builtin strings.Index)
