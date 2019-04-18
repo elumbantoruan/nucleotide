@@ -87,8 +87,11 @@ func (s *SequenceSearch) NextSequence(input rune) string {
 		// prefix targeted can be empty string, less than or match the prefix targeted length
 		s.PrefixTargeted = true
 
-		// target is found and prefix has been allocated, next is to assign the suffix
-	} else if s.FoundTarget && s.PrefixTargeted {
+		return ""
+	}
+
+	// target is found and prefix has been allocated, next is to assign the suffix
+	if s.FoundTarget && s.PrefixTargeted {
 		maxLength := len(s.Prefix) + len(s.Target) + s.SuffixTargetLen
 
 		if (bufferLength == maxLength) || s.EOF {
@@ -100,7 +103,8 @@ func (s *SequenceSearch) NextSequence(input rune) string {
 			s.SuffixTargeted = true
 			output = fmt.Sprintf("%s %s %s", s.Prefix, s.Target, s.Suffix)
 
-			// truncate since it's the end of stream
+			// reset all flags and allocations for prefix and suffix
+			// truncate the buffer since it's the end of stream and
 			if s.EOF {
 				s.reset()
 				s.StringBuilder.Reset()
@@ -108,6 +112,9 @@ func (s *SequenceSearch) NextSequence(input rune) string {
 				// need to find other target in the buffer (prefix + target + suffix)
 				// for overlapping targets
 				idx := StringIndexFrom(s.TargetIndex+1, buffer, s.Target)
+				// found an overlap
+				// we can build prefix and target
+				// truncate what's not necessary
 				if idx >= 0 {
 					left := idx - s.PrefixTargetLen
 					if left < 0 {
@@ -128,7 +135,8 @@ func (s *SequenceSearch) NextSequence(input rune) string {
 					s.Suffix = ""
 
 				} else {
-
+					// no overlap
+					// truncate what's not necessary
 					if len(buffer) > s.PrefixTargetLen {
 						buffer = buffer[len(buffer)-s.PrefixTargetLen:]
 					}
@@ -140,12 +148,12 @@ func (s *SequenceSearch) NextSequence(input rune) string {
 					s.FoundTarget = false
 				}
 			}
-
+			return output
 		}
 
 	}
 
-	return output
+	return ""
 }
 
 func (s *SequenceSearch) isTargetFound(input string) bool {
