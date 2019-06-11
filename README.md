@@ -100,3 +100,4 @@ The reason is because the EOF of stream is controlled by a special character loc
 main.go contains the simple command to execute sequencesearch functionality without having the need to run client/server gRPC components.  
 dev1
 dev2
+dev12
